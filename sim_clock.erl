@@ -1,5 +1,5 @@
 -module(sim_clock).
--export([seed/1, tick/2, run/4]).
+-export([run/4]).
 -include("planet.hrl").
 
 %% Wait for exactly N messages matching MatchFun, return their unwrapped values.
@@ -13,6 +13,8 @@ collect(N, MatchFun, Acc) ->
                 {ok, Val} -> collect(N - 1, MatchFun, [Val | Acc]);
                 ignore    -> collect(N, MatchFun, Acc)
             end
+    after 5000 ->
+        exit({timeout_waiting_for_messages, N})
     end.
 
 %% One-time initial acceleration seed (see planet.erl's seed_accel).
