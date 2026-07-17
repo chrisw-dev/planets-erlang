@@ -1,9 +1,6 @@
 -module(physics).
 -export([acceleration/2]).
-
-%% Gaussian gravitational constant squared: GM_sun in AU^3/day^2.
-%% Same trick real ephemeris software uses to avoid SI unit soup.
--define(G, 0.00029591220819).
+-include("planet.hrl").
 
 %% acceleration({X,Y}, [{Mass2,X2,Y2}, ...]) -> {Ax, Ay}
 %% Sum of pairwise gravitational pulls from every other body.

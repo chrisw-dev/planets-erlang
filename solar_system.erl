@@ -2,8 +2,6 @@
 -export([start/0]).
 -include("planet.hrl").
 
--define(G, 0.00029591220819).
-
 %% {Name, Mass (Msun), Diameter (km), Color, SemiMajorAxis (AU, 0.0 for Sun)}
 data() -> [
     {"Sun",     1.0,      1391000, "#e8a33d", 0.0},

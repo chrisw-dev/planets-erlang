@@ -1,3 +1,7 @@
+%% Gaussian gravitational constant squared: GM_sun in AU^3/day^2.
+%% Same trick real ephemeris software uses to avoid SI unit soup.
+-define(G, 0.00029591220819).
+
 -record(planet, {
     name,
     mass,       % solar masses
