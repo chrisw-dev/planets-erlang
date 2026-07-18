@@ -41,6 +41,12 @@ start() ->
 start_stream() ->
     Planets = [make_planet(D) || D <- data()],
     Pids = [planet:start(P) || P <- Planets],
-    sim_clock:run_stream(Pids, 0.25, 2000, 5, 33),
+
+    Dt = 0.25,
+    Ticks = 20000,
+    LogEvery = 5,
+    TimeBetweenTicks = 2,
+
+    sim_clock:run_stream(Pids, Dt, Ticks, LogEvery, TimeBetweenTicks),
     [Pid ! stop || Pid <- Pids],
     ok.
