@@ -8,6 +8,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const buildDir = '/tmp/planets-erl-viewer'
 const clients = new Set()
 let simulation
+let compile
+let runId = 0
 
 const socketServer = new WebSocketServer({ port: 8787, path: '/stream' })
 socketServer.on('connection', (socket) => {
@@ -23,16 +25,22 @@ socketServer.on('connection', (socket) => {
 
 async function startSimulation() {
   stopSimulation()
+  const currentRunId = runId
   await mkdir(buildDir, { recursive: true })
+  if (currentRunId !== runId) return
   const modules = ['physics.erl', 'planet.erl', 'sim_clock.erl', 'solar_system.erl']
-  const compile = spawn('erlc', ['-o', buildDir, ...modules], { cwd: root })
+  const currentCompile = spawn('erlc', ['-o', buildDir, ...modules], { cwd: root })
+  compile = currentCompile
   let errors = ''
-  compile.stderr.on('data', (chunk) => { errors += chunk })
-  compile.on('close', (code) => {
+  currentCompile.stderr.on('data', (chunk) => { errors += chunk })
+  currentCompile.on('close', (code) => {
+    if (currentRunId !== runId || compile !== currentCompile) return
+    compile = undefined
     if (code !== 0) return broadcast({ type: 'error', message: errors || 'Erlang compilation failed' })
-    simulation = spawn('erl', ['-noshell', '-pa', buildDir, '-s', 'solar_system', 'start_stream', '-s', 'init', 'stop'], { cwd: root })
+    const currentSimulation = spawn('erl', ['-noshell', '-pa', buildDir, '-s', 'solar_system', 'start_stream', '-s', 'init', 'stop'], { cwd: root })
+    simulation = currentSimulation
     let pending = ''
-    simulation.stdout.on('data', (chunk) => {
+    currentSimulation.stdout.on('data', (chunk) => {
       pending += chunk
       const lines = pending.split('\n')
       pending = lines.pop() ?? ''
@@ -40,12 +48,17 @@ async function startSimulation() {
         try { broadcast(JSON.parse(line)) } catch { broadcast({ type: 'error', message: `Invalid frame: ${line}` }) }
       })
     })
-    simulation.stderr.on('data', (chunk) => console.error(chunk.toString()))
-    simulation.on('close', () => { simulation = undefined })
+    currentSimulation.stderr.on('data', (chunk) => console.error(chunk.toString()))
+    currentSimulation.on('close', () => {
+      if (simulation === currentSimulation) simulation = undefined
+    })
   })
 }
 
 function stopSimulation() {
+  runId += 1
+  if (compile && !compile.killed) compile.kill('SIGTERM')
+  compile = undefined
   if (simulation && !simulation.killed) simulation.kill('SIGTERM')
   simulation = undefined
 }
