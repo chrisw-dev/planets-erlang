@@ -98,7 +98,8 @@ full_states(Pids) ->
     collect(N, fun({full, _, S}) -> {ok, S}; (_) -> ignore end, []).
 
 emit_frame(Pids, T, Dt) ->
-    Fulls = full_states(Pids),
+    Fulls0 = full_states(Pids),
+    Fulls = lists:sort(fun(A, B) -> A#planet.name =< B#planet.name end, Fulls0),
     Bodies = [body_json(Body) || Body <- Fulls],
     io:put_chars([
         "{\"type\":\"frame\",\"tick\":", integer_to_list(T),
