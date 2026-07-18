@@ -108,17 +108,21 @@ emit_frame(Pids, T, Dt) ->
     ]).
 
 body_json(#planet{name = Name, mass = Mass, diameter = Diameter, color = Color,
-                  x = X, y = Y, vx = Vx, vy = Vy}) ->
+                  parent = Parent, x = X, y = Y, vx = Vx, vy = Vy}) ->
     [
         "{\"name\":", string_json(Name),
         ",\"mass\":", number_json(Mass),
         ",\"diameter\":", integer_to_list(Diameter),
         ",\"color\":", string_json(Color),
+        ",\"parent\":", parent_json(Parent),
         ",\"x\":", number_json(X),
         ",\"y\":", number_json(Y),
         ",\"vx\":", number_json(Vx),
         ",\"vy\":", number_json(Vy), "}"
     ].
+
+parent_json(undefined) -> "null";
+parent_json(Parent) -> string_json(Parent).
 
 join_json([]) -> [];
 join_json([First | Rest]) -> lists:foldl(fun(Item, Acc) -> [Acc, $,, Item] end, First, Rest).
