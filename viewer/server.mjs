@@ -12,6 +12,17 @@ let compile
 let runId = 0
 
 const socketServer = new WebSocketServer({ port: 8787, path: '/stream' })
+socketServer.on('listening', () => {
+  console.log('Orbit bridge listening at ws://localhost:8787/stream')
+})
+socketServer.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error('Orbit bridge could not start: port 8787 is already in use. Stop the existing bridge or use it instead.')
+  } else {
+    console.error('Orbit bridge could not start:', error.message)
+  }
+  process.exitCode = 1
+})
 socketServer.on('connection', (socket) => {
   clients.add(socket)
   socket.send(JSON.stringify({ type: 'status', status: simulation ? 'running' : 'ready' }))
@@ -67,5 +78,3 @@ function broadcast(message) {
   const payload = JSON.stringify(message)
   clients.forEach((client) => { if (client.readyState === WebSocket.OPEN) client.send(payload) })
 }
-
-console.log('Orbit bridge listening at ws://localhost:8787/stream')
