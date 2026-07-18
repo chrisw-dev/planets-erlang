@@ -30,8 +30,9 @@ viewer:
 		echo "Viewer is already running (PID $$(cat $(RUN_DIR)/viewer.pid))."; \
 	else \
 		rm -f $(RUN_DIR)/viewer.pid $(RUN_DIR)/viewer.url; \
+		source "$(NVM_DIR)/nvm.sh" && nvm use --silent "$$(cat "$(VIEWER_DIR)/.nvmrc")" || exit 1; \
 		port=5173; \
-		while ss -ltn "sport = :$$port" | grep -q LISTEN; do port=$$((port + 1)); done; \
+		while ! node -e 'const server = require("node:net").createServer(); server.once("error", () => process.exit(1)); server.listen({ host: "0.0.0.0", port: Number(process.argv[1]) }, () => server.close());' "$$port"; do port=$$((port + 1)); done; \
 		viewer_url="http://localhost:$$port/"; \
 		printf '%s\n' "$$viewer_url" >$(RUN_DIR)/viewer.url; \
 		setsid bash -lc 'cd "$(VIEWER_DIR)" && source "$(NVM_DIR)/nvm.sh" && nvm use --silent && exec npm run dev -- --host 0.0.0.0 --port '"$$port"' --strictPort' >$(RUN_DIR)/viewer.log 2>&1 & echo $$! >$(RUN_DIR)/viewer.pid; \
