@@ -15,3 +15,8 @@ deps
 .rebar3
 _build/
 _checkouts/
+
+viewer/node_modules/
+viewer/dist/
+
+npm-debug.log*

@@ -226,3 +226,54 @@ TypeScript are better served by *not* trying to force an actor-per-body
 model at all. C is what you reach for once the interesting problem has
 shifted from "coordination" to "how many floating-point operations per
 second can this machine do."
+
+---
+
+## 4. Live browser visualization
+
+The simulator remains the Erlang process network. The browser viewer is a
+separate TypeScript application in `viewer/`: it starts the Erlang stream,
+relays newline-delimited JSON frames through WebSocket, and draws the bodies
+on a Canvas. This keeps web server, JSON transport, and drawing concerns out
+of the physics processes.
+
+### Run it
+
+Install the viewer dependencies once:
+
+```bash
+cd viewer
+npm install
+```
+
+In separate terminals, start the WebSocket bridge and browser server:
+
+```bash
+npm run bridge
+npm run dev -- --host 0.0.0.0
+```
+
+Open `http://localhost:5173/`, then select **Start simulation**. The canvas
+supports pan by dragging, zoom by scrolling, optional orbital trails, display
+pause/resume, and reset. The bridge listens at `ws://localhost:8787/stream`.
+
+### Frame protocol
+
+`solar_system:start_stream/0` runs the same initial conditions as `start/0`.
+After every fifth completed physics tick, `sim_clock` obtains full records
+through the existing barrier protocol and writes one NDJSON frame to stdout:
+
+```json
+{
+  "type": "frame",
+  "tick": 5,
+  "simulatedDays": 1.25,
+  "bodies": [
+    {"name":"Earth","mass":0.000003003,"diameter":12742,"color":"#5ec8d8","x":1.0,"y":0.02,"vx":-0.0003,"vy":0.0172}
+  ]
+}
+```
+
+The final stdout message is `{"type":"complete"}`. Frames are generated
+only after every body has completed `finish_step`, so each contains one
+consistent simulation state rather than a mix of ticks.
