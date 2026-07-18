@@ -51,4 +51,4 @@ stop:
 			rm -f "$$pid_file"; \
 		fi; \
 	done
-		@rm -f $(RUN_DIR)/viewer.url
+	@rm -f $(RUN_DIR)/viewer.url
