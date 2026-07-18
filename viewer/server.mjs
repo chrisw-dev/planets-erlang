@@ -53,6 +53,7 @@ async function startSimulation() {
     compile = undefined
     if (code !== 0) return broadcast({ type: 'error', message: errors || 'Erlang compilation failed' })
     const currentSimulation = spawn('erl', ['-noshell', '-pa', buildDir, '-s', 'solar_system', 'start_stream', '-s', 'init', 'stop'], { cwd: root })
+    currentSimulation.on('error', (err) => broadcast({ type: 'error', message: `Failed to run erl: ${err.message}` }))
     simulation = currentSimulation
     let pending = ''
     currentSimulation.stdout.on('data', (chunk) => {
