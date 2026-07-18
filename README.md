@@ -10,6 +10,12 @@ This document covers the architecture, why Erlang/OTP is a genuinely good
 fit for this specific problem (and where it isn't), and how the same design
 would look in TypeScript, Python, Go, and C.
 
+The bootstrap in `solar_system.erl` can now initialize bodies around a parent
+body (for example the Moon around Earth) before the simulation starts. The
+physics engine remains a global N-body gravity pass, and the viewer includes
+an Earth/Moon focus mode so the nested orbit is visible without losing the
+broader solar-system context.
+
 ---
 
 ## 1. The approach

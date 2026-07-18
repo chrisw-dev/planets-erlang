@@ -1,7 +1,9 @@
 import './style.css'
 
-type Body = { name: string; color: string; diameter: number; x: number; y: number }
+type Body = { name: string; color: string; diameter: number; x: number; y: number; parent?: string | null }
 type Frame = { type: 'frame'; tick: number; simulatedDays: number; bodies: Body[] }
+
+type FocusMode = 'system' | 'earth-moon'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
@@ -16,7 +18,7 @@ app.innerHTML = `
       <div class="readout frame"><span>FRAME</span><strong id="frame">-</strong></div>
     </section>
     <aside class="controls" aria-label="Simulation controls">
-      <div class="control-group"><p class="label">Simulation</p><button id="start" class="primary">Start simulation</button><button id="pause">Pause display</button><button id="reset">Reset</button></div>
+      <div class="control-group"><p class="label">Simulation</p><button id="start" class="primary">Start simulation</button><button id="pause">Pause display</button><button id="reset">Reset</button><button id="focus-earth">Focus Earth/Moon</button></div>
       <div class="control-group"><label class="switch"><input id="trails" type="checkbox" checked><span>Orbital trails</span></label><p class="hint">Drag to pan. Scroll to zoom.</p></div>
       <div class="legend" id="legend"></div>
     </aside>
@@ -33,6 +35,7 @@ const legend = document.querySelector<HTMLElement>('#legend')!
 const startButton = document.querySelector<HTMLButtonElement>('#start')!
 const pauseButton = document.querySelector<HTMLButtonElement>('#pause')!
 const resetButton = document.querySelector<HTMLButtonElement>('#reset')!
+const focusButton = document.querySelector<HTMLButtonElement>('#focus-earth')!
 const trailsToggle = document.querySelector<HTMLInputElement>('#trails')!
 
 let frame: Frame | undefined
@@ -42,6 +45,7 @@ let offsetX = 0
 let offsetY = 0
 let dragging = false
 let lastPointer = { x: 0, y: 0 }
+let focusMode: FocusMode = 'system'
 const trails = new Map<string, Array<{ x: number; y: number }>>()
 
 const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
@@ -86,6 +90,11 @@ pauseButton.addEventListener('click', () => {
   paused = !paused
   pauseButton.textContent = paused ? 'Resume display' : 'Pause display'
 })
+focusButton.addEventListener('click', () => {
+  focusMode = focusMode === 'earth-moon' ? 'system' : 'earth-moon'
+  setFocusLabel()
+  draw()
+})
 
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault()
@@ -107,6 +116,10 @@ window.addEventListener('resize', draw)
 function setStatus(value: string) {
   status.textContent = value
   statusDot.className = value === 'Running' ? 'running' : value === 'Complete' || value === 'Ready' ? 'ready' : 'offline'
+}
+
+function setFocusLabel() {
+  focusButton.textContent = focusMode === 'earth-moon' ? 'Show full system' : 'Focus Earth/Moon'
 }
 
 function updateReadout(next: Frame) {
@@ -133,17 +146,31 @@ function draw() {
   context.clearRect(0, 0, bounds.width, bounds.height)
   if (!frame) return
 
-  const maxRadius = Math.max(...frame.bodies.map((body) => Math.hypot(body.x, body.y)), 1)
-  const auPixels = (Math.min(bounds.width, bounds.height) * 0.42 / maxRadius) * scale
-  const centerX = bounds.width / 2 + offsetX
-  const centerY = bounds.height / 2 + offsetY
+  const currentFrame = frame
+  const earthBody = currentFrame.bodies.find((body) => body.name === 'Earth')
+  const moonBody = frame.bodies.find((body) => body.name === 'Moon')
+  const focusRadius = focusMode === 'earth-moon' && earthBody && moonBody
+    ? Math.max(Math.hypot(moonBody.x - earthBody.x, moonBody.y - earthBody.y) * 3, 0.01)
+    : Math.max(...currentFrame.bodies.map((body) => Math.hypot(body.x, body.y)), 1)
+  const auPixels = (Math.min(bounds.width, bounds.height) * 0.42 / focusRadius) * scale
+  const centerX = bounds.width / 2 + offsetX + (earthBody && focusMode === 'earth-moon' ? -earthBody.x * auPixels : 0)
+  const centerY = bounds.height / 2 + offsetY + (earthBody && focusMode === 'earth-moon' ? -earthBody.y * auPixels : 0)
   const point = (position: { x: number; y: number }) => ({ x: centerX + position.x * auPixels, y: centerY + position.y * auPixels })
 
   context.strokeStyle = 'rgba(183, 211, 205, 0.17)'
   context.lineWidth = 1
-  frame.bodies.filter((body) => body.name !== 'Sun').forEach((body) => { context.beginPath(); context.arc(centerX, centerY, Math.hypot(body.x, body.y) * auPixels, 0, Math.PI * 2); context.stroke() })
-  if (trailsToggle.checked) frame.bodies.forEach((body) => drawTrail(body, point))
-  frame.bodies.forEach((body) => {
+  currentFrame.bodies.filter((body) => body.name !== 'Sun').forEach((body) => {
+    const parentBody = currentFrame.bodies.find((candidate) => candidate.name === body.parent)
+    const guideCenter = parentBody ? point(parentBody) : point({ x: 0, y: 0 })
+    const guideRadius = parentBody
+      ? Math.hypot(body.x - parentBody.x, body.y - parentBody.y) * auPixels
+      : Math.hypot(body.x, body.y) * auPixels
+    context.beginPath()
+    context.arc(guideCenter.x, guideCenter.y, guideRadius, 0, Math.PI * 2)
+    context.stroke()
+  })
+  if (trailsToggle.checked) currentFrame.bodies.forEach((body) => drawTrail(body, point))
+  currentFrame.bodies.forEach((body) => {
     const position = point(body)
     const radius = body.name === 'Sun' ? 11 : Math.max(3, Math.min(8, Math.log10(body.diameter) * 1.25))
     context.beginPath()
@@ -169,8 +196,12 @@ function drawTrail(body: Body, point: (position: { x: number; y: number }) => { 
 function clearScene() {
   frame = undefined
   trails.clear()
+  focusMode = 'system'
+  setFocusLabel()
   time.textContent = '0.0 days'
   frameText.textContent = '-'
   legend.innerHTML = ''
   draw()
 }
+
+setFocusLabel()
