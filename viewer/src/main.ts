@@ -50,8 +50,15 @@ socket.addEventListener('open', () => setStatus('Ready'))
 socket.addEventListener('close', () => setStatus('Disconnected'))
 socket.addEventListener('error', () => setStatus('Bridge unavailable'))
 socket.addEventListener('message', ({ data }) => {
-  const message = JSON.parse(String(data)) as Frame | { type: 'complete' } | { type: 'error'; message: string }
-  if (message.type === 'frame' && !paused) {
+  const message = JSON.parse(String(data)) as
+    | Frame
+    | { type: 'complete' }
+    | { type: 'error'; message: string }
+    | { type: 'status'; status: 'running' | 'ready' }
+
+  if (message.type === 'status') {
+    setStatus(message.status === 'running' ? 'Running' : 'Ready')
+  } else if (message.type === 'frame' && !paused) {
     frame = message
     recordTrails(message)
     updateReadout(message)
