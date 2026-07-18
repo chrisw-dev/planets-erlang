@@ -1,5 +1,5 @@
 -module(solar_system).
--export([start/0]).
+-export([start/0, start_stream/0]).
 -include("planet.hrl").
 
 %% {Name, Mass (Msun), Diameter (km), Color, SemiMajorAxis (AU, 0.0 for Sun)}
@@ -35,5 +35,18 @@ start() ->
 
     sim_clock:run(Pids, Dt, Ticks, LogEvery),
 
+    [Pid ! stop || Pid <- Pids],
+    ok.
+
+start_stream() ->
+    Planets = [make_planet(D) || D <- data()],
+    Pids = [planet:start(P) || P <- Planets],
+
+    Dt = 0.25,
+    Ticks = 20000,
+    LogEvery = 5,
+    TimeBetweenTicks = 2,
+
+    sim_clock:run_stream(Pids, Dt, Ticks, LogEvery, TimeBetweenTicks),
     [Pid ! stop || Pid <- Pids],
     ok.

@@ -226,3 +226,78 @@ TypeScript are better served by *not* trying to force an actor-per-body
 model at all. C is what you reach for once the interesting problem has
 shifted from "coordination" to "how many floating-point operations per
 second can this machine do."
+
+---
+
+## 4. Live browser visualization
+
+The simulator remains the Erlang process network. The browser viewer is a
+separate TypeScript application in `viewer/`: it starts the Erlang stream,
+relays newline-delimited JSON frames through WebSocket, and draws the bodies
+on a Canvas. This keeps web server, JSON transport, and drawing concerns out
+of the physics processes.
+
+### Run it
+
+Prerequisites:
+
+- Erlang (`erlc` and `erl`) available on `PATH`.
+- Node.js 20.19.0. The viewer includes `viewer/.nvmrc`; Vite 8 does not
+  support Node 21.
+
+Install the viewer dependencies once, using the pinned Node version:
+
+```bash
+cd viewer
+source ~/.nvm/nvm.sh
+nvm use
+npm install
+```
+
+From the repository root, start the WebSocket bridge and browser server:
+
+```bash
+make start
+```
+
+`make start` runs both services in the background, records their process IDs
+under `viewer/.run/`, and writes their output to `viewer/.run/bridge.log` and
+`viewer/.run/viewer.log`. The bridge listens on port 8787 and compiles and
+starts the Erlang simulation when the browser sends **Start simulation**.
+
+Stop both services started by Make with:
+
+```bash
+make stop
+```
+
+Open the `Viewer URL` printed by `make start`, normally
+`http://localhost:5173/`, then select **Start simulation**. Make selects the
+next available port when 5173 is in use and prints the exact URL it started.
+If port 8787 is already in use, an existing bridge is running; use it or stop
+it with `fuser -k 8787/tcp` before starting a new one.
+
+The canvas supports pan by dragging, zoom by scrolling, optional orbital
+trails, display pause/resume, and reset. The bridge endpoint is
+`ws://localhost:8787/stream`.
+
+### Frame protocol
+
+`solar_system:start_stream/0` runs the same initial conditions as `start/0`.
+After every fifth completed physics tick, `sim_clock` obtains full records
+through the existing barrier protocol and writes one NDJSON frame to stdout:
+
+```json
+{
+  "type": "frame",
+  "tick": 5,
+  "simulatedDays": 1.25,
+  "bodies": [
+    {"name":"Earth","mass":0.000003003,"diameter":12742,"color":"#5ec8d8","x":1.0,"y":0.02,"vx":-0.0003,"vy":0.0172}
+  ]
+}
+```
+
+The final stdout message is `{"type":"complete"}`. Frames are generated
+only after every body has completed `finish_step`, so each contains one
+consistent simulation state rather than a mix of ticks.
