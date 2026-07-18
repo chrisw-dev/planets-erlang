@@ -52,7 +52,7 @@ function stopSimulation() {
 
 function broadcast(message) {
   const payload = JSON.stringify(message)
-  clients.forEach((client) => { if (client.readyState === client.OPEN) client.send(payload) })
+  clients.forEach((client) => { if (client.readyState === WebSocket.OPEN) client.send(payload) })
 }
 
 console.log('Orbit bridge listening at ws://localhost:8787/stream')
