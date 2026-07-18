@@ -44,7 +44,8 @@ let dragging = false
 let lastPointer = { x: 0, y: 0 }
 const trails = new Map<string, Array<{ x: number; y: number }>>()
 
-const socket = new WebSocket(`ws://${location.hostname}:8787/stream`)
+const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws'
+const socket = new WebSocket(`${wsProtocol}://${location.hostname}:8787/stream`)
 socket.addEventListener('open', () => setStatus('Ready'))
 socket.addEventListener('close', () => setStatus('Disconnected'))
 socket.addEventListener('error', () => setStatus('Bridge unavailable'))
