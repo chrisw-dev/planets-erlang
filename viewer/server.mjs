@@ -43,8 +43,12 @@ async function startSimulation() {
   const currentCompile = spawn('erlc', ['-o', buildDir, ...modules], { cwd: root })
   compile = currentCompile
   let errors = ''
-  currentCompile.stderr.on('data', (chunk) => { errors += chunk })
-  currentCompile.on('close', (code) => {
+  currentCompile.stderr.on('data', (chunk) => { errors += chunk.toString() })
+  currentCompile.on('error', (err) => {
+    if (currentRunId !== runId || compile !== currentCompile) return
+    compile = undefined
+    broadcast({ type: 'error', message: `Failed to run erlc: ${err.message}` })
+  })
     if (currentRunId !== runId || compile !== currentCompile) return
     compile = undefined
     if (code !== 0) return broadcast({ type: 'error', message: errors || 'Erlang compilation failed' })
