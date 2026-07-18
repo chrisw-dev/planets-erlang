@@ -64,6 +64,7 @@ socket.addEventListener('message', ({ data }) => {
 })
 
 startButton.addEventListener('click', () => {
+  if (socket.readyState !== WebSocket.OPEN) return setStatus('Disconnected')
   clearScene()
   socket.send(JSON.stringify({ type: 'start' }))
   setStatus('Running')
