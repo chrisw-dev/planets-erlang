@@ -271,11 +271,11 @@ Stop both services started by Make with:
 make stop
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173/`, then
-select **Start simulation**. If port 5173 is already in use, Vite selects the
-next available port; use the URL it prints. If port 8787 is already in use,
-an existing bridge is running; use it or stop it with `fuser -k 8787/tcp`
-before starting a new one.
+Open the `Viewer URL` printed by `make start`, normally
+`http://localhost:5173/`, then select **Start simulation**. Make selects the
+next available port when 5173 is in use and prints the exact URL it started.
+If port 8787 is already in use, an existing bridge is running; use it or stop
+it with `fuser -k 8787/tcp` before starting a new one.
 
 The canvas supports pan by dragging, zoom by scrolling, optional orbital
 trails, display pause/resume, and reset. The bridge endpoint is
