@@ -239,23 +239,47 @@ of the physics processes.
 
 ### Run it
 
-Install the viewer dependencies once:
+Prerequisites:
+
+- Erlang (`erlc` and `erl`) available on `PATH`.
+- Node.js 20.19.0. The viewer includes `viewer/.nvmrc`; Vite 8 does not
+  support Node 21.
+
+Install the viewer dependencies once, using the pinned Node version:
 
 ```bash
 cd viewer
+source ~/.nvm/nvm.sh
+nvm use
 npm install
 ```
 
-In separate terminals, start the WebSocket bridge and browser server:
+From the repository root, start the WebSocket bridge and browser server:
 
 ```bash
-npm run bridge
-npm run dev -- --host 0.0.0.0
+make start
 ```
 
-Open `http://localhost:5173/`, then select **Start simulation**. The canvas
-supports pan by dragging, zoom by scrolling, optional orbital trails, display
-pause/resume, and reset. The bridge listens at `ws://localhost:8787/stream`.
+`make start` runs both services in the background, records their process IDs
+under `viewer/.run/`, and writes their output to `viewer/.run/bridge.log` and
+`viewer/.run/viewer.log`. The bridge listens on port 8787 and compiles and
+starts the Erlang simulation when the browser sends **Start simulation**.
+
+Stop both services started by Make with:
+
+```bash
+make stop
+```
+
+Open the local URL printed by Vite, normally `http://localhost:5173/`, then
+select **Start simulation**. If port 5173 is already in use, Vite selects the
+next available port; use the URL it prints. If port 8787 is already in use,
+an existing bridge is running; use it or stop it with `fuser -k 8787/tcp`
+before starting a new one.
+
+The canvas supports pan by dragging, zoom by scrolling, optional orbital
+trails, display pause/resume, and reset. The bridge endpoint is
+`ws://localhost:8787/stream`.
 
 ### Frame protocol
 
