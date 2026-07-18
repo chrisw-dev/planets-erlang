@@ -132,7 +132,7 @@ function draw() {
 
   context.strokeStyle = 'rgba(183, 211, 205, 0.17)'
   context.lineWidth = 1
-  frame.bodies.slice(1).forEach((body) => { context.beginPath(); context.arc(centerX, centerY, Math.hypot(body.x, body.y) * auPixels, 0, Math.PI * 2); context.stroke() })
+  frame.bodies.filter((body) => body.name !== 'Sun').forEach((body) => { context.beginPath(); context.arc(centerX, centerY, Math.hypot(body.x, body.y) * auPixels, 0, Math.PI * 2); context.stroke() })
   if (trailsToggle.checked) frame.bodies.forEach((body) => drawTrail(body, point))
   frame.bodies.forEach((body) => {
     const position = point(body)
