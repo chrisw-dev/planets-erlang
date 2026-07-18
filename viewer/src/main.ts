@@ -70,6 +70,7 @@ startButton.addEventListener('click', () => {
   setStatus('Running')
 })
 resetButton.addEventListener('click', () => {
+  if (socket.readyState !== WebSocket.OPEN) return setStatus('Disconnected')
   clearScene()
   socket.send(JSON.stringify({ type: 'reset' }))
   setStatus('Ready')
