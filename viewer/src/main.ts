@@ -148,7 +148,7 @@ function draw() {
 
   const currentFrame = frame
   const earthBody = currentFrame.bodies.find((body) => body.name === 'Earth')
-  const moonBody = frame.bodies.find((body) => body.name === 'Moon')
+  const moonBody = currentFrame.bodies.find((body) => body.name === 'Moon')
   const focusRadius = focusMode === 'earth-moon' && earthBody && moonBody
     ? Math.max(Math.hypot(moonBody.x - earthBody.x, moonBody.y - earthBody.y) * 3, 0.01)
     : Math.max(...currentFrame.bodies.map((body) => Math.hypot(body.x, body.y)), 1)
