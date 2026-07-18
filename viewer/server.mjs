@@ -49,6 +49,7 @@ async function startSimulation() {
     compile = undefined
     broadcast({ type: 'error', message: `Failed to run erlc: ${err.message}` })
   })
+  currentCompile.on('close', (code) => {
     if (currentRunId !== runId || compile !== currentCompile) return
     compile = undefined
     if (code !== 0) return broadcast({ type: 'error', message: errors || 'Erlang compilation failed' })
