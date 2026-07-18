@@ -112,7 +112,7 @@ function setStatus(value: string) {
 function updateReadout(next: Frame) {
   time.textContent = `${next.simulatedDays.toFixed(1)} days`
   frameText.textContent = String(next.tick)
-  legend.innerHTML = next.bodies.map((body) => `<span><i style="background:${body.color}"></i>${body.name}</span>`).join('')
+  legend.replaceChildren(...next.bodies.map((body) => { const span = document.createElement('span'); const dot = document.createElement('i'); dot.style.backgroundColor = body.color; span.append(dot, document.createTextNode(body.name)); return span }))
 }
 
 function recordTrails(next: Frame) {
